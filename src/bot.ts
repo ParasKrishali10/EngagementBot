@@ -1,7 +1,13 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js"
 import { prisma } from "./prisma"
 import {broadcast} from "./websocket"
+import "dotenv/config";
 
+const token = process.env.DISCORD_BOT_TOKEN;
+
+console.log("TOKEN TYPE:", typeof token);
+console.log("TOKEN LENGTH:", token?.length);
+console.log("TOKEN STARTS WITH:", token?.slice(0, 5));
 
 const client = new Client({
   intents: [
@@ -20,6 +26,8 @@ client.on("ready", () => {
   console.log("BOT LOGGED IN AS", client.user?.tag);
 });
 
+
+console.log("TOKEN =", process.env.DISCORD_BOT_TOKEN);
 client.on("messageReactionAdd",async(reaction,user)=>{
     if(user.bot)
     {
@@ -90,4 +98,5 @@ client.on("messageReactionRemove",async(reaction,user)=>{
 
 
 })
-client.login(process.env.DISCORD_BOT_TOKEN);
+client.login(process.env.DISCORD_BOT_TOKEN!.trim());
+
