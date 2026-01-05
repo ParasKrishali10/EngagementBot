@@ -1,0 +1,124 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([title, published])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  discordId String? @unique
+  discordUsername String?
+  discordAvatar String?
+  accessToken String?
+  refreshToken String?
+
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  connectedServers ConnectedServer[]
+  scheduledPosts ScheduledPost[]
+
+  name String?
+  email String? @unique
+  password String?
+
+}
+
+model ConnectedServer{
+  id String @id @default(cuid())
+  userId String
+  guildId String
+  guildName String
+  guildIcon String?
+  channelId String?
+  channelName String?
+  createdAt DateTime @default(now())
+  channels ConnectedChannel[]
+  user User @relation(fields: [userId], references: [id])
+
+
+  @@unique([userId, guildId])
+}
+
+model ScheduledPost {
+  id String @id @default(cuid())
+
+  userId String
+  guildId String
+  channelId String
+
+  description String
+  generatedContent String?
+  imageUrls String[]
+
+  scheduledFor DateTime
+  status Status @default(SCHEDULED)
+  postedAt DateTime?
+  discordMessageId String?
+
+  error String?
+  retryCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([status])
+}
+
+model ConnectedChannel{
+  id String @id @default(cuid())
+  serverId String
+  guildId String
+  channelId String
+  channelName String
+
+  server ConnectedServer @relation(fields:[serverId],references: [id])
+  @@unique([guildId,channelId])
+}
+
+model DailyReactionStat{
+  id String @id @default(cuid())
+  messageId String
+  date DateTime
+  totalReactions Int @default(0)
+  @@unique([messageId,date])
+}
+
+model MessageReaction{
+  id String @id @default(cuid())
+  messageId String
+  channelId String
+  guildId String
+  emoji String
+  count Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([messageId,emoji])
+}
+
+enum Status{
+  SCHEDULED
+  POSTED
+  FAIL
+
+}
