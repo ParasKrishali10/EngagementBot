@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js"
 import { prisma } from "./prisma"
-import {broadcast} from "./websocket"
+import { broadcast } from "./server";
 import "dotenv/config";
 
 const token = process.env.DISCORD_BOT_TOKEN;
