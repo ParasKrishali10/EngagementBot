@@ -1,102 +1,120 @@
-import { Client, GatewayIntentBits, Partials } from "discord.js"
-import { prisma } from "./prisma"
-import { broadcast } from "./server";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
+import { prisma } from "./prisma";
+import { broadcast } from "./server"; // ✅ IMPORTANT
+import "./server";
 import "dotenv/config";
 
-const token = process.env.DISCORD_BOT_TOKEN;
-
-console.log("TOKEN TYPE:", typeof token);
-console.log("TOKEN LENGTH:", token?.length);
-console.log("TOKEN STARTS WITH:", token?.slice(0, 5));
-
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildMessageReactions,
-  ],
-  partials: [
-    Partials.Message,
-    Partials.Channel,
-    Partials.Reaction,
-  ],
-});
-console.log("BOT PROCESS STARTED");
-client.on("ready", () => {
-  console.log("BOT LOGGED IN AS", client.user?.tag);
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions,
+    ],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
+client.once("clientReady", () => {
+    console.log("BOT LOGGED IN AS", client.user?.tag);
+});
 
-console.log("TOKEN =", process.env.DISCORD_BOT_TOKEN);
-client.on("messageReactionAdd",async(reaction,user)=>{
-    if(user.bot)
-    {
-        return
+client.on("messageReactionAdd", async (reaction, user) => {
+    if (user.bot) return;
+
+    // 🔴 THIS IS REQUIRED
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (err) {
+            console.error("Failed to fetch reaction:", err);
+            return;
+        }
     }
-     console.log("REACTION EVENT FIRED", {
-    messageId: reaction.message.id,
-    emoji: reaction.emoji.name,
-  });
-    const emoji=reaction.emoji.id ?? reaction.emoji.name!
-    const messageId=reaction.message.id
-    const channelId=reaction.message.channelId
-    const guildId=reaction.message.guildId!
+
+    console.log("REACTION EVENT FIRED", {
+        messageId: reaction.message.id,
+        emoji: reaction.emoji.name,
+    });
+
+    const emoji = reaction.emoji.id ?? reaction.emoji.name!;
+    const messageId = reaction.message.id;
+    const channelId = reaction.message.channelId;
+    const guildId = reaction.message.guildId!;
 
     await prisma.messageReaction.upsert({
-        where:{
-            messageId_emoji:{messageId,emoji}
-        },update:{
-            count:{increment:1}
-        },create:{
-            messageId ,
-            channelId ,
-            guildId ,
-            emoji ,
-            count:1
-
-        }
-    })
-
-    // Update daily analytics
-    const today=new Date()
-    today.setHours(0,0,0,0);
-    await prisma.dailyReactionStat.upsert({
-        where:{
-            messageId_date:{messageId,date:today}
-        },update:{
-            totalReactions:{increment:1}
-        },create:{
+        where: {
+            messageId_emoji: { messageId, emoji },
+        },
+        update: {
+            count: { increment: 1 },
+        },
+        create: {
             messageId,
-            date:today,
-            totalReactions:1
-        }
-    })
+            channelId,
+            guildId,
+            emoji,
+            count: 1,
+        },
+    });
 
     broadcast({
-        type:"REACTION_UPDATE",
-        messageId
-    })
-})
+        type: "REACTION_UPDATE",
+        messageId,
+    });
+});
+client.on("messageReactionRemove", async (reaction, user) => {
+    if (user?.bot) return;
 
-client.on("messageReactionRemove",async(reaction,user)=>{
-    if(user.bot) return
-
-    const emoji=reaction.emoji.id ?? reaction.emoji.name!
-    const messageId=reaction.message.id
-    await prisma.messageReaction.update({
-        where:{
-            messageId_emoji:{messageId,emoji}
-        },data:{
-            count:{decrement:1}
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch {
+            return;
         }
-    })
+    }
 
-     broadcast({
-    type: "REACTION_UPDATE",
-    messageId,
-  });
+    if (reaction.message.partial) {
+        try {
+            await reaction.message.fetch();
+        } catch {
+            return;
+        }
+    }
 
+    console.log("REACTION REMOVED", {
+        messageId: reaction.message.id,
+        emoji: reaction.emoji.name,
+    });
 
-})
-client.login(process.env.DISCORD_BOT_TOKEN!.trim());
+    const emoji = reaction.emoji.id ?? reaction.emoji.name!;
+    const messageId = reaction.message.id;
 
+    await prisma.$transaction(async (tx) => {
+        const existing = await tx.messageReaction.findUnique({
+            where: { messageId_emoji: { messageId, emoji } },
+            select: { count: true },
+        });
+
+        if (!existing) {
+            // ✅ Reaction already gone — safe to ignore
+            return;
+        }
+
+        if (existing.count <= 1) {
+            await tx.messageReaction.delete({
+                where: { messageId_emoji: { messageId, emoji } },
+            });
+        } else {
+            await tx.messageReaction.update({
+                where: { messageId_emoji: { messageId, emoji } },
+                data: { count: { decrement: 1 } },
+            });
+        }
+    });
+
+    broadcast({
+        type: "REACTION_UPDATE",
+        messageId,
+    });
+});
+
+client.login(process.env.DISCORD_BOT_TOKEN!);
