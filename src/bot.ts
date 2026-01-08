@@ -1,7 +1,6 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { prisma } from "./prisma";
-import { broadcast } from "./server"; // ✅ IMPORTANT
-import "./server";
+import { broadcast } from "./server"; 
 import "dotenv/config";
 
 const client = new Client({
