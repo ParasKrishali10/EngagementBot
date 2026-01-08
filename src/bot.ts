@@ -18,6 +18,12 @@ console.log("BOT MODULE INSTANCE", Math.random());
 client.once("clientReady", () => {
     console.log("BOT LOGGED IN AS", client.user?.tag);
 });
+client.on("raw", (packet) => {
+  if (packet.t && packet.t.includes("REACTION")) {
+    console.log("🔥 RAW EVENT:", packet.t);
+  }
+});
+
 
 client.on("messageReactionAdd", async (reaction, user) => {
      console.log("🔥 REACTION ADD EVENT FIRED");
