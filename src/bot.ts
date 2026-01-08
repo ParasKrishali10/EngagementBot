@@ -24,14 +24,22 @@ client.on("messageReactionAdd", async (reaction, user) => {
     if (user.bot) return;
 
     // 🔴 THIS IS REQUIRED
-    if (reaction.partial) {
-        try {
-            await reaction.fetch();
-        } catch (err) {
-            console.error("Failed to fetch reaction:", err);
-            return;
-        }
+if (reaction.partial) {
+    try {
+      await reaction.fetch();
+    } catch {
+      return;
     }
+  }
+
+  if (reaction.message.partial) {
+    try {
+      await reaction.message.fetch();
+    } catch {
+      return;
+    }
+  }
+
 
     console.log("REACTION EVENT FIRED", {
         messageId: reaction.message.id,
