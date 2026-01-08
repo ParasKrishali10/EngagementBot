@@ -18,6 +18,6 @@
   "scripts": {
     "dev": "tsx src/server.ts",
     "build": "tsc",
-    "start": "node dist/bot.js"
+    "start": "node dist/server.js"
   }
 }
