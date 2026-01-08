@@ -17,6 +17,7 @@ client.once("clientReady", () => {
 });
 
 client.on("messageReactionAdd", async (reaction, user) => {
+     console.log("🔥 REACTION ADD EVENT FIRED");
     if (user.bot) return;
 
     // 🔴 THIS IS REQUIRED
