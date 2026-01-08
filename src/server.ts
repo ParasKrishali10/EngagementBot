@@ -9,10 +9,7 @@ app.get("/", (_req, res) => {
   res.send("Bot is alive 🚀");
 });
 
-// ONE server
 const server = http.createServer(app);
-
-// Attach WS to same server
 export const wss = new WebSocketServer({ server });
 
 export function broadcast(data: any) {
@@ -24,7 +21,7 @@ export function broadcast(data: any) {
   });
 }
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 10000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log("HTTP + WebSocket running on port", PORT);
 });
