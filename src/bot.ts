@@ -12,6 +12,8 @@ const client = new Client({
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction,Partials.User],
 });
+console.log("BOT MODULE INSTANCE", Math.random());
+
 
 client.once("clientReady", () => {
     console.log("BOT LOGGED IN AS", client.user?.tag);
