@@ -76,6 +76,7 @@ if (reaction.partial) {
     broadcast({
         type: "REACTION_UPDATE",
         messageId,
+        emoji
     });
 });
 client.on("messageReactionRemove", async (reaction, user) => {
@@ -112,7 +113,6 @@ client.on("messageReactionRemove", async (reaction, user) => {
         });
 
         if (!existing) {
-            // ✅ Reaction already gone — safe to ignore
             return;
         }
 
@@ -131,6 +131,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
     broadcast({
         type: "REACTION_UPDATE",
         messageId,
+        emoji
     });
 });
 
