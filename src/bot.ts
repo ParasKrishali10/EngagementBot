@@ -129,7 +129,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
     });
 
     broadcast({
-        type: "REACTION_UPDATE",
+        type: "REACTION_DELETE",
         messageId,
         emoji
     });
